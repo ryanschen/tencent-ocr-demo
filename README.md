@@ -1,2 +1,1 @@
-# tencent-ocr-demo
-tencent orc demo buite on nodejs
+参考：[腾讯AI文档地址](https://ai.qq.com/doc/ocridcardocr.shtml)

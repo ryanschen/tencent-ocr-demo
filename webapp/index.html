@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>ocr-demo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+</head>
+<body>
+  <div>
+    <span style="float:left;">
+      <span>身份证</span>
+      <input type="file" accept=".gif,.jpg,.jpeg,.png" onchange="imgChange(event, 1)">
+      <p id="result1"></p>
+    </span>
+    <span style="float:left;">
+      <span>驾驶证</span>
+      <input type="file" accept=".gif,.jpg,.jpeg,.png" onchange="imgChange(event, 2)">
+      <p id="result2"></p>
+    </span>
+  </div>
+  
+  <script>
+    const imgChange = function (e, t) {
+      console.log(e.target.files)
+      const files = Array.prototype.slice.call(e.target.files)
+      if (files.length > 1) return alert('最多选择一张图片')
+
+      const file = files[0]
+      if (!/\/(?:jpg|jpeg|png|gif)/i.test(file.type)) {
+        return alert('图片格式不正确！')
+      }
+
+      const reader = new FileReader()
+      reader.onload = function () {
+        getDetail(this.result.split(',')[1], t)
+      }
+      reader.readAsDataURL(file)
+    }
+
+    function getDetail (imageBase64, t) {
+      window.axios.post('http://localhost:3000/getresult', {
+        aiUrl: t === 1
+          ? 'https://api.ai.qq.com/fcgi-bin/ocr/ocr_idcardocr'
+          : 'https://api.ai.qq.com/fcgi-bin/ocr/ocr_driverlicenseocr',
+        aiParams: t === 1
+          ? { image: imageBase64, card_type: 0 }
+          : { image: imageBase64, type: 1 }
+      })
+        .then(response => {
+          let str = ''
+          if (t === 1 && response.data && Object.getOwnPropertyNames(response.data)) {
+            Object.entries(response.data.data).forEach((item, index) => {
+              if (item[0] !== 'frontimage') {
+                str += `<span>${item[0]}：${item[1]}</span><br>`
+              }
+            })
+          } else if (t === 2 && response.data) {
+            console.log(response.data.data.item_list);
+            response.data.data.item_list.forEach(item => {
+              str += `<span>${item.item}：${item.itemstring}</span><br>`
+            })
+          }
+          document.querySelector(`#result${t}`).innerHTML = str
+        })
+    }
+  </script>
+</body>
+</html>
